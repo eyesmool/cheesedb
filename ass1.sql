@@ -42,7 +42,6 @@ GROUP BY hardness
 
 create or replace view Q5(style)
 as
--- your code here
 WITH StylesNumCheeses AS
 	(SELECT s.name as StyleName, COUNT(c.name) as ncheeses
 	FROM cheeses c
@@ -58,7 +57,6 @@ WHERE ncheeses = (SELECT max(ncheeses)
 
 create or replace view Q6(country)
 as
--- your code here
 WITH CountryStyles AS (
 	SELECT DISTINCT p.country as country, c.style as style_id
 	FROM cheeses c
@@ -81,7 +79,6 @@ WHERE NumStyles = (SELECT max(NumStyles) FROM CountryNumStyles)
 
 create or replace view Q7(cheese,maker,aged,min_aging,max_aging)
 as
--- your code here
 WITH "CheeseAgeView" AS (
 	SELECT c.name as cheese, m.name as maker, c.aged_for as aged, s.min_aging, s.max_aging
 	FROM cheeses c
@@ -101,7 +98,6 @@ create type MakerPlace as ( maker text, location text );
 create or replace function Q8(partial_name text)
 	returns setof MakerPlace
 as $$
--- your code here
 DECLARE
 	t RECORD;
 	qry TEXT;
@@ -128,14 +124,41 @@ END;
 $$ language plpgsql;
 
 
--- -- Q9: Lists of cheeses for cheesemakers matching a partial name
+-- Q9: Lists of cheeses for cheesemakers matching a partial name
 
--- drop function if exists Q9;
--- drop type if exists OneCheese;
--- create type OneCheese as ( maker text, cheese text, style text );
+drop function if exists Q9;
+drop type if exists OneCheese;
+create type OneCheese as ( maker text, cheese text, style text );
 
--- create or replace function Q9(partial_name text)
--- 	returns setof OneCheese
--- as $$
--- -- your code here
--- $$ language plpgsql;
+create or replace function Q9(partial_name text)
+	returns setof OneCheese
+as $$
+DECLARE
+	t RECORD;
+	oc OneCheese;
+	qry TEXT;
+	prev_maker TEXT := '';
+BEGIN
+	qry := '
+		SELECT m.name as maker, c.name as cheese, s.name as style
+		FROM Makers m
+			JOIN Cheeses c on (m.id = c.made_by)
+			JOIN Styles s on (c.style = s.id)
+		WHERE m.name ILIKE ''%'' || $1 || ''%''
+		ORDER BY maker, cheese
+	';
+	FOR t in EXECUTE qry USING partial_name
+	LOOP
+		IF t.maker = prev_maker THEN
+			oc.maker := NULL;
+		ELSE
+			oc.maker := t.maker;
+			prev_maker := t.maker;
+		END IF;
+		oc.cheese := t.cheese;
+		oc.style := t.style;
+		RETURN NEXT oc;
+	END LOOP;
+	RETURN;
+END;
+$$ language plpgsql;
