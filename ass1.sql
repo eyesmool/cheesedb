@@ -92,17 +92,41 @@ SELECT * from "CheeseAgeView"
 WHERE aged < min_aging OR aged > max_aging
 ;
 
--- -- Q8: Return a list of cheesemakers matching a partial name, and their location
+-- Q8: Return a list of cheesemakers matching a partial name, and their location
 
--- drop function if exists Q8;
--- drop type if exists MakerPlace;
--- create type MakerPlace as ( maker text, location text );
+drop function if exists Q8;
+drop type if exists MakerPlace;
+create type MakerPlace as ( maker text, location text );
 
--- create or replace function Q8(partial_name text)
--- 	returns setof MakerPlace
--- as $$
--- -- your code here
--- $$ language plpgsql;
+create or replace function Q8(partial_name text)
+	returns setof MakerPlace
+as $$
+-- your code here
+DECLARE
+	t RECORD;
+	qry TEXT;
+	mp MakerPlace;
+BEGIN
+	qry := '
+		SELECT * 
+		FROM Makers m
+			JOIN Places p on (m.located_in = p.id)
+		WHERE m.name ILIKE ''%'' || $1 || ''%''
+		ORDER BY m.name
+	';
+	FOR t IN EXECUTE qry USING partial_name
+	LOOP
+		mp.maker := t.name;
+		mp.location :=
+			COALESCE(t.town || ', ', '') ||
+			COALESCE(t.region || ', ', '') ||
+			COALESCE(t.country, '');
+		RETURN NEXT mp;
+	END LOOP;
+	RETURN;
+END;
+$$ language plpgsql;
+
 
 -- -- Q9: Lists of cheeses for cheesemakers matching a partial name
 
