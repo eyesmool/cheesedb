@@ -25,6 +25,8 @@ The goal is to build some useful data access operations on the Cheese database, 
 
 ## Background  
 According to Wikipedia, cheese is "a type of dairy product produced in a range of flavors, textures, and forms by coagulation of the milk protein casein". According to me, cheese is delicious.
+![image](https://github.com/user-attachments/assets/14fba0b0-dae6-4f25-ac77-fa15fc113189)
+
 
 ### Introduction  
 The database contains information about:  
