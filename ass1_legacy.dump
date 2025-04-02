@@ -1,0 +1,454 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 17.2
+-- Dumped by pg_dump version 17.2
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: hardval; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.hardval AS ENUM (
+    'soft',
+    'semi-soft',
+    'semi-hard',
+    'hard'
+);
+
+
+--
+-- Name: milkval; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.milkval AS ENUM (
+    'cow',
+    'goat',
+    'sheep',
+    'buffalo',
+    'yak'
+);
+
+
+--
+-- Name: percentage; Type: DOMAIN; Schema: public; Owner: -
+--
+
+CREATE DOMAIN public.percentage AS integer
+	CONSTRAINT percentage_check CHECK (((VALUE >= 0) AND (VALUE <= 100)));
+
+
+--
+-- Name: populationrecord; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.populationrecord AS (
+	tablename text,
+	ntuples integer
+);
+
+
+--
+-- Name: yearval; Type: DOMAIN; Schema: public; Owner: -
+--
+
+CREATE DOMAIN public.yearval AS integer
+	CONSTRAINT yearval_check CHECK (((VALUE >= 1000) AND (VALUE <= 3000)));
+
+
+--
+-- Name: dbpop(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dbpop() RETURNS SETOF public.populationrecord
+    LANGUAGE plpgsql
+    AS $$
+declare
+	rec record;
+	qry text;
+	res PopulationRecord;
+	num integer;
+begin
+	for rec in select tablename from pg_tables where schemaname='public' order by tablename
+	loop
+		qry := 'select count(*) from ' || quote_ident(rec.tablename);
+		execute qry into num;
+		res.tablename := rec.tablename; res.ntuples := num;
+		return next res;
+	end loop;
+	return;
+end;
+$$;
+
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: cheeses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.cheeses (
+    id integer NOT NULL,
+    name text NOT NULL,
+    style integer NOT NULL,
+    aged_for interval NOT NULL,
+    fat public.percentage NOT NULL,
+    notes text,
+    made_by integer NOT NULL
+);
+
+
+--
+-- Name: makers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.makers (
+    id integer NOT NULL,
+    name text NOT NULL,
+    located_in integer NOT NULL,
+    founded public.yearval
+);
+
+
+--
+-- Name: places; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.places (
+    id integer NOT NULL,
+    country text NOT NULL,
+    region text,
+    town text
+);
+
+
+--
+-- Name: styles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.styles (
+    id integer NOT NULL,
+    name text NOT NULL,
+    hardness public.hardval NOT NULL,
+    milk public.milkval NOT NULL,
+    notes text,
+    min_aging interval,
+    max_aging interval,
+    fat public.percentage NOT NULL,
+    origin integer NOT NULL
+);
+
+
+--
+-- Data for Name: cheeses; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.cheeses (id, name, style, aged_for, fat, notes, made_by) FROM stdin;
+401	Harbourne Blue	304	70 days	48	sheep	201
+402	Beenleigh Blue	304	70 days	48	sheep	201
+403	Devon Blue	304	140 days	36	\N	201
+404	Stinking Bishop	304	4 mons	48	\N	202
+405	Roaring Forties	304	3 mons	30	\N	203
+406	Black Label Triple Cream Blue	304	3 mons	50	\N	203
+407	Endeavour Blue	320	3 mons	35	\N	203
+408	Lighthouse Blue Brie	306	3 mons	50	blue veined	203
+409	Black Label Cheddar	311	2 years	50	\N	203
+410	Stokes Point Smoked Cheddar	311	1 year 3 mons	25	smoked	203
+411	Surprise Bay Cheddar	311	1 year 3 mons	25	\N	203
+412	Black Label Brie	306	3 mons	50	\N	203
+413	Cape Wickham Double Brie	306	3 mons	60	\N	203
+414	Half Moon Bay Double Brie	306	3 mons	60	\N	203
+415	Furneaux Double Cream	306	3 mons	75	\N	203
+416	Netherby Cove Camembert	309	2 mons	45	\N	203
+417	Phoques Cove Camembert	309	2 mons	45	\N	203
+418	Victoria Cove Smoked Camembert	309	2 mons	40	smoked	203
+419	Seal Bay Triple Cream Brie	306	2 mons	75	\N	203
+420	Three Rivers Bay Triple Cream Brie	306	2 mons	75	\N	203
+421	Jindi Brie	306	2 mons	45	\N	204
+422	Double Cream Brie	306	3 mons	55	\N	204
+423	Triple Cream Brie	306	3 mons	65	\N	204
+424	Jindi Camembert	309	3 mons	40	\N	204
+425	Classic Camembert	309	2 mons	45	\N	204
+426	Mawson Blue	304	3 mons	48	orange	205
+427	Heysen Blue	304	3 mons	48	orange	205
+428	Truffle Brie	306	2 mons	55	truffle-infused	205
+429	Ash Brie	306	2 mons	55	ash rind	205
+430	Medium Cheddar	311	3 mons	13	\N	206
+431	Sharp Cheddar	311	6 mons	13	\N	206
+432	Extra Sharp White Cheddar	311	9 mons	13	\N	206
+433	Monterey Jack	326	4 mons	12	\N	206
+434	Garlic Chilli Cheddar	311	3 mons	12	infused with chilli pepers and garlic	206
+435	Colby Jack	314	2 mons	20	\N	206
+436	Medium Cheddar	311	4 mons	12	\N	207
+437	Aged Cheddar	311	9 mons	12	\N	207
+438	Sharp Yellow Cheddar	311	1 year 6 mons	12	\N	207
+439	Chipotle Cheddar Cheese	311	1 year 6 mons	12	smoked chipotle chiles	207
+440	Extra Sharp Cheddar	311	10 years	12	\N	207
+441	Deer Creek	311	1 year	12	infused with tequila and Habanero peppers	207
+442	Black Bomber	311	1 year 3 mons	34	\N	208
+443	Red Storm	337	1 year	34	\N	208
+444	Beech wood	311	1 year 3 mons	30	cold smoked with beech wood	208
+445	Amber Mist	311	1 year 3 mons	32	infused with scotch whiskey	208
+446	Rock Star	311	1 year 6 mons	32	matured in rock caves	208
+447	Raw Monterey Jack	326	2 mons	20	\N	209
+448	Sierra Jack Traditional	326	2 mons	25	\N	209
+449	Sierra Jack Smokehouse	326	3 mons	25	smoked	209
+450	Bella Capra	312	2 mons	30	\N	209
+451	Capra Bianca Aged Goat Cheddar	312	9 mons	25	\N	209
+452	Saint-Nectaire	336	3 mons	45	\N	221
+453	Roquefort	304	4 mons	52	\N	221
+454	Brillat-Savarin	307	21 days	72	\N	212
+455	Lion Heart the Good Brie	306	2 mons	30	\N	212
+456	Rustic Camembert	309	2 mons	45	\N	212
+457	Comte	315	1 year 3 mons	45	\N	213
+458	Mimolette	317	6 mons	35	\N	214
+459	Gouda	321	9 mons	48	\N	214
+460	Gruyere	322	9 mons	45	\N	223
+461	Manchego	325	7 mons	50	\N	219
+462	Emmental	318	8 mons	45	\N	223
+463	Gorgonzola	304	3 mons	48	\N	216
+464	Grana Padano	330	1 year 3 mons	32	\N	218
+465	Humboldt Fog	307	2 mons	55	ashed	220
+466	Point Reyes Original Blue	304	9 mons	50	\N	215
+467	Rogue River Blue	304	1 year 3 mons	48	\N	222
+468	Cambozola	309	3 mons	50	blue-veined	217
+469	Feta	319	4 mons	50	\N	219
+470	Le Buffalo	308	1 mon	60	\N	221
+471	Parmigiano-Reggiano	331	1 year 8 mons	32	\N	218
+\.
+
+
+--
+-- Data for Name: makers; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.makers (id, name, located_in, founded) FROM stdin;
+201	Ticklemore Cheese Dairy	101	1980
+202	Charles Martell and Sons	102	1973
+203	King Island Dairy Co	103	1902
+204	Jindi Dairy	104	1993
+205	Udder Delights	105	1995
+206	Tillamook Creamery	106	1909
+207	Henning's Cheese	107	1914
+208	Snowdonia Cheese Co	108	2001
+209	Sierra Nevada Cheese Company	109	1997
+210	Jasper Hill Creamery	110	2003
+211	Cabot Creamery	111	2003
+212	Fromagerie Berthaut	112	1957
+213	La Fromagerie de la Combe	113	2005
+214	Kaeserei Herzog	114	1895
+215	Point Reyes Farmstead Cheese Company	115	2000
+216	Cheese Factory of the Alps	116	1920
+217	Fromagerie du Presbytere	117	1997
+218	Caseificio Il Fiorino	118	1947
+219	Caseificio San Pietro	119	2004
+220	Cypress Grove	120	1983
+221	Fromagerie Chabert	121	1930
+222	Rogue Creamery	122	1935
+223	Swiss Alpine Cheese	123	1992
+224	Neals Yard Dairy	124	1979
+\.
+
+
+--
+-- Data for Name: places; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.places (id, country, region, town) FROM stdin;
+101	UK	Devon	Totnes
+102	UK	Gloucestershire	Dymock
+103	Australia	King Island	Loorana
+104	Australia	Gippsland	\N
+105	Australia	Adelaide Hills	Lobethal
+106	USA	Oregon	North Tillamook
+107	USA	Wisconsin	Kiel
+108	Wales	Snowdonia	\N
+109	USA	California	Willows
+110	USA	Vermont	Greensboro
+111	USA	Vermont	Waitsfield
+112	France	Burgundy	\N
+113	Switzerland	Jura	\N
+114	Switzerland	Emmental	\N
+115	USA	California	Point Reyes
+116	France	Savoie	\N
+117	Canada	Quebec	\N
+118	Italy	Tuscany	\N
+119	Italy	Sicily	\N
+120	USA	California	Arcata
+121	France	Savoie	Thones
+122	USA	Oregon	Grants Pass
+123	Switzerland	Emmental	\N
+124	UK	London	\N
+226	Italy	Veneto	\N
+227	Italy	Veneto	\N
+228	France	\N	\N
+229	Italy	\N	Naples
+230	France	Seine-et-Marne	Brie
+231	France	Burgundy	null
+232	Italy	Apulia	\N
+233	France	Normandy	Camembert
+234	Italy	Sardinia	\N
+235	UK	Somerset	Cheddar
+236	France	\N	
+237	Mexico	\N	\N
+238	USA	Wisconsin	Colby
+239	France	Franche-Comte	\N
+240	Mexico	Michoacan	Cotija
+241	Netherlands	Noord-Holland	Edam
+242	Switzerland	Emme Valley	\N
+243	Greece	\N	\N
+244	Italy	Piedmont	\N
+245	Netherlands	\N	\N
+246	Switzerland	Fribourg	Gruyere
+247	Cyprus	\N	\N
+248	Denmark	\N	\N
+249	Spain	La Mancha	\N
+250	USA	California	Monterey
+251	Italy	Campania	\N
+252	Mexico	Oaxaca	\N
+253	India	\N	\N
+254	Italy	Parma-Reggio	\N
+255	Italy	Reggio Emilia	\N
+256	Italy	Lazio	\N
+257	Italy	Campania	\N
+258	France	Aveyron	Roquefort-sur-Soulzon
+259	UK	Derbyshire	Wymondham
+260	Italy	Bergamo	Val Taleggio
+261	UK	Leicestershire	\N
+\.
+
+
+--
+-- Data for Name: styles; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.styles (id, name, hardness, milk, notes, min_aging, max_aging, fat, origin) FROM stdin;
+302	Asiago Prassato	hard	cow	smooth	2 mons	2 mons	48	226
+303	Asiago Vecchio	hard	cow	crumbly	10 mons	10 mons	45	227
+304	Blue	semi-soft	cow	crumbly	1 mon	4 mons	44	228
+305	Bocconcini	semi-soft	cow	smooth,elastic	1 day	1 day	57	229
+306	Brie	soft	cow	white rind	35 days	42 days	60	230
+307	Brillat-Savarin	soft	cow	creamy	7 days	14 days	75	231
+308	Burrata	semi-soft	buffalo	\N	1 day	1 day	25	232
+309	Camembert	soft	cow	white rind	21 days	42 days	65	233
+310	Casu Marzu	soft	sheep	contains maggots	4 mons	1 year	35	234
+311	Cheddar	semi-hard	cow	\N	3 mons	2 years	50	235
+312	Chevre	semi-soft	goat	goat cheese	28 days	70 days	46	236
+313	Chihuahua	semi-soft	cow	\N	30 days	30 days	52	237
+314	Colby	semi-hard	cow	firm,open,springy	2 mons	3 mons	30	238
+315	Comte	semi-hard	cow	nutty	4 mons	3 years	45	239
+316	Cotija	hard	cow	white,crumbly	3 mons	1 year	75	240
+317	Edam	semi-hard	cow	\N	2 mons	1 year	43	241
+318	Emmental	semi-hard	cow	holes	4 mons	3 years	69	242
+319	Feta	soft	sheep	brined	2 mons	1 year	32	243
+320	Gorgonzola	soft	cow	blue-veined,crumbly	3 mons	4 mons	75	244
+321	Gouda	semi-hard	cow	sweet,smooth	1 mon	9 mons	41	245
+322	Gruyere	hard	cow	\N	5 mons	10 mons	50	246
+323	Halloumi	semi-hard	goat	\N	40 days	60 days	15	247
+324	Havarti	semi-soft	cow	\N	3 mons	4 mons	32	248
+325	Manchego	hard	sheep	\N	2 mons	2 years	36	249
+326	Monterey Jack	semi-hard	cow	\N	1 mon	6 mons	46	250
+327	Mozzarella	semi-soft	buffalo	stretched curd	1 day	1 day	22	251
+328	Oaxaca	semi-soft	cow	smooth,stringy	1 day	1 day	21	252
+329	Paneer	semi-soft	buffalo	\N	1 day	1 day	50	253
+330	Parmesan	hard	cow	\N	1 year	2 years	44	254
+331	Parmigiano-Reggiano	hard	cow	\N	4 mons	8 years 4 mons	44	255
+332	Pecorino	semi-hard	sheep	\N	8 mons	1 year	50	256
+333	Provolone	semi-hard	cow	\N	2 mons	6 mons	41	257
+334	Roquefort	semi-hard	sheep	blue,crumbly	5 mons	8 mons	47	258
+335	Stilton	semi-soft	cow	blue,crumbly,creamy	4 mons	8 mons	50	259
+336	Taleggio	semi-soft	cow	washed rind	42 days	70 days	50	260
+337	Red Leicester	hard	cow	crumbly,orange	3 mons	9 mons	35	261
+\.
+
+
+--
+-- Name: cheeses cheeses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cheeses
+    ADD CONSTRAINT cheeses_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: makers makers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.makers
+    ADD CONSTRAINT makers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: places places_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.places
+    ADD CONSTRAINT places_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: styles styles_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.styles
+    ADD CONSTRAINT styles_name_key UNIQUE (name);
+
+
+--
+-- Name: styles styles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.styles
+    ADD CONSTRAINT styles_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cheeses cheeses_made_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cheeses
+    ADD CONSTRAINT cheeses_made_by_fkey FOREIGN KEY (made_by) REFERENCES public.makers(id);
+
+
+--
+-- Name: cheeses cheeses_style_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cheeses
+    ADD CONSTRAINT cheeses_style_fkey FOREIGN KEY (style) REFERENCES public.styles(id);
+
+
+--
+-- Name: makers makers_located_in_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.makers
+    ADD CONSTRAINT makers_located_in_fkey FOREIGN KEY (located_in) REFERENCES public.places(id);
+
+
+--
+-- Name: styles styles_origin_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.styles
+    ADD CONSTRAINT styles_origin_fkey FOREIGN KEY (origin) REFERENCES public.places(id);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
